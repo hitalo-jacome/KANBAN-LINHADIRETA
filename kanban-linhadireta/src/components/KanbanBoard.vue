@@ -1,105 +1,110 @@
 <template>
-    <div class="kanban-board">
-        <div class="board-header">
+    <div class="kanban-board container-fluid">
+        <div class="board-header text-center">
             <h1>Gestão de Demandas</h1>
-            <button @click="openNewCardModal" class="btn-new">Nova Demanda</button>
+            <button @click="openNewCardModal" class="btn btn-primary">Nova Demanda</button>
         </div>
 
-        <div class="board-columns">
-            <div v-for="column in columns" :key="column.id" class="column">
-                <div class="column-header">
+        <div class="board-columns row justify-content-between mt-4">
+            <div v-for="column in columns" :key="column.id" :class="['column', getColumnClass(column.status)]"
+                class="col-lg-3 col-md-4 col-sm-6 col-12 mb-4">
+                <div class="column-header d-flex justify-content-between align-items-center mb-2">
                     <h2>{{ column.name }}</h2>
-                    <span class="card-count">{{ column.cards.length }}</span>
+                    <span class="badge bg-secondary">{{ column.cards.length }}</span>
                 </div>
 
                 <draggable v-model="column.cards" group="cards" :animation="200" ghost-class="ghost-card"
-                    @change="onDragChange">
+                    :itemKey="card => card.id" @change="onDragChange">
                     <template #item="{ element: card }">
-                        <div class="card" @click="openCardDetails(card)">
-                            <div class="card-header">
-                                <span class="card-title">{{ card.title }}</span>
-                                <span :class="'status-badge ' + getStatusClass(card.status)">
-                                    {{ card.status }}
-                                </span>
+                        <div :class="['card', getCardClass(card.statusId)]" class="mb-2 p-2"
+                            @click="openCardDetails(card)">
+                            <div class="card-header d-flex justify-content-between">
+                                <span>{{ card.titulo }}</span>
+                                <span :class="getStatusClass(card.statusId)">{{ getStatusClass(card.statusId)
+                                    }}</span>
                             </div>
-                            <div class="card-info">
-                                <p class="card-description">{{ card.description }}</p>
-                                <div class="card-metadata">
-                                    <span class="responsible" v-if="card.responsible">
-                                        <i class="fas fa-user"></i> {{ card.responsible }}
+                            <div class="card-body">
+                                <p class="card-description">{{ card.descricao }}</p>
+                                <div class="card-metadata d-flex justify-content-between">
+                                    <span v-if="card.responsavelId">
+                                        <i class="fas fa-user"></i> {{ getUserById(card.responsavelId) }}
                                     </span>
-                                    <span class="protocol">
-                                        #{{ card.protocol }}
-                                    </span>
+                                    <span class="protocol">#{{ card.protocolo }}</span>
                                 </div>
                             </div>
-                            <div class="card-footer">
+                            <div class="card-footer d-flex justify-content-between">
                                 <span class="date-info">
-                                    <i class="fas fa-calendar"></i>
-                                    Recebido: {{ formatDate(card.receivedDate) }}
+                                    <i class="fas fa-calendar"></i> Recebido: {{ formatDate(card.dataRecebimento) }}
                                 </span>
-                                <span class="date-info" v-if="card.deadline">
-                                    <i class="fas fa-clock"></i>
-                                    Prazo: {{ formatDate(card.deadline) }}
+                                <span class="date-info" v-if="card.prazo">
+                                    <i class="fas fa-clock"></i> Prazo: {{ formatDate(card.prazo) }}
                                 </span>
                             </div>
                         </div>
                     </template>
                 </draggable>
+
             </div>
         </div>
 
         <!-- Modal para Nova Demanda -->
-        <div v-if="showNewCardModal" class="modal">
-            <div class="modal-content">
-                <h2>Nova Demanda</h2>
-                <form @submit.prevent="createCard">
-                    <div class="form-group">
-                        <label>Protocolo</label>
-                        <input v-model="newCard.protocol" placeholder="Número do protocolo" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Título</label>
-                        <input v-model="newCard.title" placeholder="Título da demanda" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Descrição</label>
-                        <textarea v-model="newCard.description" placeholder="Descrição detalhada da demanda" rows="3">
-                </textarea>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Responsável</label>
-                            <select v-model="newCard.responsible">
-                                <option value="">Selecione...</option>
-                                <option v-for="user in users" :key="user.id" :value="user.name">
-                                    {{ user.name }}
-                                </option>
-                            </select>
+        <div v-if="showNewCardModal" class="custom-modal-overlay">
+            <div class="custom-modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nova Demanda</h5>
+                    <button type="button" class="btn-close" @click="closeNewCardModal"></button>
+                </div>
+                <hr>
+                <div class="modal-body">
+                    <form @submit.prevent="createCard">
+                        <div class="mb-3">
+                            <label class="form-label">Protocolo</label>
+                            <input v-model="newCard.Protocolo" class="form-control" placeholder="Número do protocolo"
+                                required>
                         </div>
 
-                        <div class="form-group">
-                            <label>Prazo</label>
-                            <input type="date" v-model="newCard.deadline">
+                        <div class="mb-3">
+                            <label class="form-label">Título</label>
+                            <input v-model="newCard.Titulo" class="form-control" placeholder="Título da demanda"
+                                required>
                         </div>
-                    </div>
 
-                    <div class="modal-actions">
-                        <button type="button" @click="showNewCardModal = false">Cancelar</button>
-                        <button type="submit">Salvar</button>
-                    </div>
-                </form>
+                        <div class="mb-3">
+                            <label class="form-label">Descrição</label>
+                            <textarea v-model="newCard.Descricao" class="form-control"
+                                placeholder="Descrição detalhada da demanda" rows="3"></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="mb-3 col-md-6">
+                                <label class="form-label">Responsável</label>
+                                <select v-model="newCard.ResponsavelId" class="form-select">
+                                    <option value="">Selecione...</option>
+                                    <option v-for="user in users" :key="user.id" :value="user.id">{{ user.name }}
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3 col-md-6">
+                                <label class="form-label">Prazo</label>
+                                <input type="date" v-model="newCard.Prazo" class="form-control">
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" @click="closeNewCardModal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Salvar</button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
 </template>
 
 <script>
-import draggable from 'vuedraggable'
-import axios from 'axios'
+import draggable from 'vuedraggable';
+import axios from 'axios';
 
 export default {
     name: 'KanbanBoard',
@@ -109,36 +114,11 @@ export default {
     data() {
         return {
             columns: [
-                {
-                    id: 1,
-                    name: 'Recebida',
-                    status: 'RECEIVED',
-                    cards: []
-                },
-                {
-                    id: 2,
-                    name: 'Análise Presidência',
-                    status: 'PRESIDENT_ANALYSIS',
-                    cards: []
-                },
-                {
-                    id: 3,
-                    name: 'Tratativa Responsável',
-                    status: 'IN_TREATMENT',
-                    cards: []
-                },
-                {
-                    id: 4,
-                    name: 'Análise Final',
-                    status: 'FINAL_ANALYSIS',
-                    cards: []
-                },
-                {
-                    id: 5,
-                    name: 'Retorno ao Cliente',
-                    status: 'COMPLETED',
-                    cards: []
-                }
+                { id: 1, name: 'Recebida', status: 1, cards: [] },
+                { id: 2, name: 'Análise Presidência', status: 2, cards: [] },
+                { id: 3, name: 'Tratativa Responsável', status: 3, cards: [] },
+                { id: 4, name: 'Análise Final', status: 4, cards: [] },
+                { id: 5, name: 'Retorno ao Cliente', status: 5, cards: [] }
             ],
             showNewCardModal: false,
             newCard: this.getEmptyCard(),
@@ -147,89 +127,129 @@ export default {
                 { id: 2, name: 'Maria Santos' },
                 { id: 3, name: 'Pedro Oliveira' }
             ]
-        }
+        };
+    },
+    mounted() {
+        this.loadCards();
     },
     methods: {
+        // Modal control methods
+        openNewCardModal() {
+            this.showNewCardModal = true;
+        },
+        closeNewCardModal() {
+            this.showNewCardModal = false;
+        },
+
+        // Helper methods
+        getStatusClass(statusId) {
+            const statusMap = {
+                1: 'RECEBIDA',
+                2: 'ANALISE_PRESIDENCIA',
+                3: 'TRATATIVA_RESPONSAVEL',
+                4: 'ANALISE_FINAL',
+                5: 'COMPLETA'
+            };
+            return statusMap[statusId] || 'UNKNOWN';
+        },
+        getUserById(responsavelId) {
+            const user = this.users.find(user => user.id === responsavelId);
+            return user ? user.name : 'Desconhecido';
+        },
         getEmptyCard() {
             return {
-                protocol: '',
-                title: '',
-                description: '',
-                responsible: '',
-                deadline: null,
-                receivedDate: new Date().toISOString().split('T')[0],
-                status: 'RECEIVED'
-            }
+                Protocolo: '',
+                Titulo: '',
+                Descricao: '',
+                ResponsavelId: '',
+                Prazo: null,
+                DataRecebimento: new Date().toISOString().split('T')[0],
+                StatusId: 1
+            };
+        },
+        formatDate(date) {
+            if (!date) return '';
+            return new Date(date).toLocaleDateString('pt-BR');
         },
 
+        // Styling methods
+        getColumnClass(status) {
+            const classMap = {
+                1: 'column-recebida',
+                2: 'column-analise',
+                3: 'column-tratativa',
+                4: 'column-final',
+                5: 'column-completa'
+            };
+            return classMap[status] || 'column-default';
+        },
+        getCardClass(statusId) {
+            const classMap = {
+                1: 'card-recebida',
+                2: 'card-analise',
+                3: 'card-tratativa',
+                4: 'card-final',
+                5: 'card-completa'
+            };
+            return classMap[statusId] || 'card-default';
+        },
+
+        // API call methods
         async loadCards() {
             try {
-                const response = await axios.get('/api/demands')
-                // Distribuir os cards nas colunas corretas baseado no status
+                const response = await axios.get('https://localhost:7025/api/LinhaDireta');
+                // Map the cards to their respective columns
                 this.columns = this.columns.map(column => ({
                     ...column,
-                    cards: response.data.filter(card => card.status === column.status)
-                }))
+                    cards: response.data.filter(card => card.statusId === column.status)
+                }));
             } catch (error) {
-                console.error('Erro ao carregar demandas:', error)
+                console.error('Erro ao carregar demandas:', error);
             }
         },
-
-        async onDragChange({ added }) {
+        async createCard() {
+            try {
+                console.log(this.newCard);
+                await axios.post('https://localhost:7025/api/LinhaDireta', this.newCard);
+                this.loadCards();
+            } catch (error) {
+                console.error('Erro ao criar demanda:', error.response.data);
+            }
+        },
+        async onDragChange(event) {
+            const { added } = event;
             if (added) {
-                const card = added.element
-                const newStatus = this.columns.find(col =>
-                    col.cards.includes(card)
-                ).status
-
+                const card = added.element;
+                const newStatus = this.columns.find(col => col.cards.includes(card)).status;
+                card.statusId = newStatus;
                 try {
-                    await axios.put(`/api/demands/${card.id}/status`, {
-                        status: newStatus
-                    })
-                    // Atualizar histórico de movimentação
-                    await axios.post(`/api/demands/${card.id}/history`, {
-                        status: newStatus,
-                        date: new Date(),
-                        user: 'Usuário Atual' // Implementar usuário logado
-                    })
+                    await axios.put(`https://localhost:7025/api/LinhaDireta/${card.id}/${newStatus}`);
                 } catch (error) {
-                    console.error('Erro ao mover demanda:', error)
-                    await this.loadCards()
+                    console.error('Erro ao mover demanda:', error);
+                    await this.loadCards(); // Recarrega os cards em caso de erro
                 }
             }
         },
 
-        getStatusClass(status) {
-            const classes = {
-                'RECEIVED': 'status-new',
-                'PRESIDENT_ANALYSIS': 'status-analysis',
-                'IN_TREATMENT': 'status-treatment',
-                'FINAL_ANALYSIS': 'status-final',
-                'COMPLETED': 'status-completed'
-            }
-            return classes[status] || 'status-default'
-        },
-
-        formatDate(date) {
-            if (!date) return ''
-            return new Date(date).toLocaleDateString('pt-BR')
-        },
-
-        // ... outros métodos existentes
+        // Placeholder for card details method
+        openCardDetails() { }
     }
-}
+};
 </script>
 
+
 <style scoped>
+/* Estilo geral do quadro Kanban */
 .kanban-board {
-    padding: 20px;
     height: 100vh;
     background: #f5f6fa;
+    padding-top: 1em;
 }
 
+/* Estilo das colunas do Kanban */
 .board-columns {
     display: flex;
-    gap: 20px;
+    gap: 0;
     overflow-x: auto;
     padding: 20px 0;
 }
@@ -237,10 +257,11 @@ export default {
 .column {
     background: #ffffff;
     border-radius: 10px;
-    min-width: 320px;
-    max-width: 320px;
+    min-width: 360px;
+    max-width: 360px;
     height: fit-content;
     padding: 16px;
+    margin: 0 2em;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -260,6 +281,7 @@ export default {
     font-size: 0.9em;
 }
 
+/* Estilo dos cartões dentro das colunas */
 .card {
     background: white;
     border: 1px solid #e9ecef;
@@ -268,6 +290,7 @@ export default {
     margin-bottom: 12px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     transition: all 0.3s ease;
+    cursor: pointer;
 }
 
 .card:hover {
@@ -287,38 +310,43 @@ export default {
     color: #666;
 }
 
-.status-badge {
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.8em;
-    font-weight: 500;
+/* Estilo específico para as cores das colunas */
+.column-recebida {
+    background-color: #e3f2fd;
+    /* Azul claro */
+    border: 1px solid #1976d2;
+    /* Azul escuro */
 }
 
-.status-new {
-    background: #e3f2fd;
-    color: #1976d2;
+.column-analise {
+    background-color: #fff3e0;
+    /* Laranja claro */
+    border: 1px solid #f57c00;
+    /* Laranja escuro */
 }
 
-.status-analysis {
-    background: #fff3e0;
-    color: #f57c00;
+.column-tratativa {
+    background-color: #e8f5e9;
+    /* Verde claro */
+    border: 1px solid #388e3c;
+    /* Verde escuro */
 }
 
-.status-treatment {
-    background: #e8f5e9;
-    color: #388e3c;
+.column-final {
+    background-color: #f3e5f5;
+    /* Roxo claro */
+    border: 1px solid #7b1fa2;
+    /* Roxo escuro */
 }
 
-.status-final {
-    background: #f3e5f5;
-    color: #7b1fa2;
+.column-completa {
+    background-color: #e8eaf6;
+    /* Azul acinzentado */
+    border: 1px solid #3f51b5;
+    /* Azul escuro */
 }
 
-.status-completed {
-    background: #e8eaf6;
-    color: #3f51b5;
-}
-
+/* Estilo dos formulários e campos */
 .form-group {
     margin-bottom: 16px;
 }
@@ -338,5 +366,56 @@ label {
     font-weight: 500;
 }
 
-/* ... restante dos estilos existentes ... */
+/* Estilo para o modal customizado */
+.custom-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.custom-modal-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: 43em;
+    max-width: 100%;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    position: relative;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.btn-close {
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.custom-modal-content h5 {
+    margin: 0;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+hr {
+    width: 100%;
+    border: 0.5px solid #ddd;
+}
 </style>
