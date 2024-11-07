@@ -43,76 +43,48 @@
                         </div>
                     </template>
                 </draggable>
-
             </div>
         </div>
 
         <!-- Modal para Nova Demanda -->
-        <div v-if="showNewCardModal" class="custom-modal-overlay">
-            <div class="custom-modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Nova Demanda</h5>
-                    <button type="button" class="btn-close" @click="closeNewCardModal"></button>
-                </div>
-                <hr>
-                <div class="modal-body">
-                    <form @submit.prevent="createCard">
-                        <div class="mb-3">
-                            <label class="form-label">Protocolo</label>
-                            <input v-model="newCard.Protocolo" class="form-control" placeholder="Número do protocolo"
-                                required>
-                        </div>
+        <NovaDemandaModal
+            :show="showNewCardModal"
+            :users="users"
+            :card="newCard"
+            @close="closeNewCardModal"
+        />
 
-                        <div class="mb-3">
-                            <label class="form-label">Título</label>
-                            <input v-model="newCard.Titulo" class="form-control" placeholder="Título da demanda"
-                                required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Descrição</label>
-                            <textarea v-model="newCard.Descricao" class="form-control"
-                                placeholder="Descrição detalhada da demanda" rows="3"></textarea>
-                        </div>
-
-                        <div class="row">
-                            <div class="mb-3 col-md-6">
-                                <label class="form-label">Responsável</label>
-                                <select v-model="newCard.ResponsavelId" class="form-select">
-                                    <option value="">Selecione...</option>
-                                    <option v-for="user in users" :key="user.id" :value="user.id">{{ user.name }}
-                                    </option>
-                                </select>
-                            </div>
-
-                            <div class="mb-3 col-md-6">
-                                <label class="form-label">Prazo</label>
-                                <input type="date" v-model="newCard.Prazo" class="form-control">
-                            </div>
-                        </div>
-
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" @click="closeNewCardModal">Cancelar</button>
-                            <button type="submit" class="btn btn-primary">Salvar</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
+        <!-- Modal para Detalhes e Histórico do Card -->
+        <DetalhesCardModal
+            :show="showCardDetailsModal"
+            :card="selectedCard"
+            :getUserById="getUserById"
+            :getStatusClass="getStatusClass"
+            :formatDate="formatDate"
+            @close="closeCardDetailsModal"
+        />
     </div>
 </template>
 
 <script>
+import NovaDemandaModal from './NovaDemandaModal.vue';
+import DetalhesCardModal from './DetalhesCardModal.vue';
 import draggable from 'vuedraggable';
 import axios from 'axios';
 
 export default {
     name: 'KanbanBoard',
     components: {
-        draggable
+        draggable,
+        NovaDemandaModal,
+        DetalhesCardModal
     },
     data() {
         return {
+            newCard: this.getEmptyCard(),
+            showNewCardModal: false,
+            showCardDetailsModal: false,
+            selectedCard: {},
             columns: [
                 { id: 1, name: 'Recebida', status: 1, cards: [] },
                 { id: 2, name: 'Análise Presidência', status: 2, cards: [] },
@@ -120,8 +92,6 @@ export default {
                 { id: 4, name: 'Análise Final', status: 4, cards: [] },
                 { id: 5, name: 'Retorno ao Cliente', status: 5, cards: [] }
             ],
-            showNewCardModal: false,
-            newCard: this.getEmptyCard(),
             users: [
                 { id: 1, name: 'João Silva' },
                 { id: 2, name: 'Maria Santos' },
@@ -139,6 +109,13 @@ export default {
         },
         closeNewCardModal() {
             this.showNewCardModal = false;
+        },
+        openCardDetails(card) {
+            this.selectedCard = card;
+            this.showCardDetailsModal = true;
+        },
+        closeCardDetailsModal() {
+            this.showCardDetailsModal = false;
         },
 
         // Helper methods
@@ -207,15 +184,6 @@ export default {
                 console.error('Erro ao carregar demandas:', error);
             }
         },
-        async createCard() {
-            try {
-                console.log(this.newCard);
-                await axios.post('https://localhost:7025/api/LinhaDireta', this.newCard);
-                this.loadCards();
-            } catch (error) {
-                console.error('Erro ao criar demanda:', error.response.data);
-            }
-        },
         async onDragChange(event) {
             const { added } = event;
             if (added) {
@@ -229,14 +197,10 @@ export default {
                     await this.loadCards(); // Recarrega os cards em caso de erro
                 }
             }
-        },
-
-        // Placeholder for card details method
-        openCardDetails() { }
+        }
     }
 };
 </script>
-
 
 <style scoped>
 /* Estilo geral do quadro Kanban */
@@ -257,8 +221,8 @@ export default {
 .column {
     background: #ffffff;
     border-radius: 10px;
-    min-width: 360px;
-    max-width: 360px;
+    min-width: 380px;
+    max-width: 380px;
     height: fit-content;
     padding: 16px;
     margin: 0 2em;
@@ -364,58 +328,5 @@ label {
     display: block;
     margin-bottom: 4px;
     font-weight: 500;
-}
-
-/* Estilo para o modal customizado */
-.custom-modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-}
-
-.custom-modal-content {
-    background-color: white;
-    padding: 20px;
-    border-radius: 10px;
-    width: 43em;
-    max-width: 100%;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    position: relative;
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 1.25rem;
-    margin-bottom: 1rem;
-}
-
-.btn-close {
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-}
-
-.custom-modal-content h5 {
-    margin: 0;
-}
-
-.modal-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-}
-
-hr {
-    width: 100%;
-    border: 0.5px solid #ddd;
 }
 </style>
