@@ -132,7 +132,7 @@ export default {
         },
         async createCard() {
             try {
-                await axios.post('https://localhost:7025/api/LinhaDireta', {
+                await axios.post('https://localhost:7097/api/LinhaDireta', {
                     ...this.formData,
                     Protocolo: '',
                     StatusId: 1,

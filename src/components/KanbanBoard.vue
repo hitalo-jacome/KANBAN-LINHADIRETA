@@ -174,7 +174,7 @@ export default {
         // API call methods
         async loadCards() {
             try {
-                const response = await axios.get('https://localhost:7025/api/LinhaDireta');
+                const response = await axios.get('https://localhost:7097/api/LinhaDireta');
                 // Map the cards to their respective columns
                 this.columns = this.columns.map(column => ({
                     ...column,
@@ -191,7 +191,7 @@ export default {
                 const newStatus = this.columns.find(col => col.cards.includes(card)).status;
                 card.statusId = newStatus;
                 try {
-                    await axios.put(`https://localhost:7025/api/LinhaDireta/${card.id}/${newStatus}`);
+                    await axios.put(`https://localhost:7097/api/LinhaDireta/${card.id}/${newStatus}`);
                 } catch (error) {
                     console.error('Erro ao mover demanda:', error);
                     await this.loadCards(); // Recarrega os cards em caso de erro
